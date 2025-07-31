@@ -1,90 +1,78 @@
-'use client';
+// frontend/app/login/page.tsx
+"use client";
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { api } from '../../lib/api';          // stays the same
-import { useAuth } from '../_context/AuthContext';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { post } from "@/lib/api";
+// ← Corrected import path to your _context folder
+import { useAuth } from "../_context/AuthContext";
 
 export default function LoginPage() {
-  const router        = useRouter();
-  const { saveAuth }  = useAuth();
+  const router = useRouter();
+  const { login } = useAuth();
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy]         = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-
-  async function handleSubmit(e: FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
-    setError(null);
-
     try {
-      /* --------------------------------------------------------
-         Send as  x-www-form-urlencoded:  username=…&password=…
-         -------------------------------------------------------- */
-      const body = new URLSearchParams({
-        username: email,
-        password,
-      });
-
-      const { access_token } = await api<{ access_token: string }>(
-        '/auth/login',
-        undefined,
-        {
-          method: 'POST',
-          body,
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        },
+      // OAuth2 form flow: username & password
+      const { access_token, detail } = await post(
+        "/auth/login",
+        { username: email, password },
+        { form: true }
       );
-
-      /* 2️⃣  Fetch profile */
-      const me = await api('/me', access_token);
-
-      /* 3️⃣  Persist + route */
-      saveAuth(access_token, me);
-      router.replace(me.is_admin ? '/admin' : '/dashboard');
-    } catch (err: any) {
-      setError(err.message ?? 'Login failed');
-    } finally {
-      setBusy(false);
+      if (access_token) {
+        login(access_token);
+        router.push("/consult");
+      } else {
+        alert(detail || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during login");
     }
-  }
+  };
 
-  /* ---------------- UI --------------- */
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg"
-      >
-        <h1 className="mb-6 text-center text-2xl font-semibold">Sign in</h1>
-
-        <input
-          required type="email" placeholder="E-mail"
-          className="input w-full mb-4"
-          value={email} onChange={e => setEmail(e.target.value)}
-        />
-
-        <input
-          required type="password" placeholder="Password"
-          className="input w-full mb-6"
-          value={password} onChange={e => setPassword(e.target.value)}
-        />
-
-        {error && (
-          <p className="mb-4 rounded bg-red-100 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-
+    <div className="max-w-md mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Log In</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="email" className="block mb-1">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className="w-full border rounded p-2"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password" className="block mb-1">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            className="w-full border rounded p-2"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
         <button
-          disabled={busy}
-          className="btn-primary w-full"
+          type="submit"
+          className="w-full bg-blue-600 text-white rounded p-2"
         >
-          {busy ? 'Signing in…' : 'Sign in'}
+          Log In
         </button>
       </form>
-    </main>
+    </div>
   );
 }

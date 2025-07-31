@@ -1,24 +1,35 @@
-export const API =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:8000')
-    .replace(/\/+$/, '');                     // trim trailing slash(es)
+// frontend/lib/api.ts
 
-export async function api<T>(
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
+/**
+ * POST helper for both JSON and form-encoded requests.
+ */
+export async function post(
   path: string,
-  token?: string,
-  init: RequestInit = {},
-): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init.headers,
-    },
+  body: Record<string, any>,
+  options: { form?: boolean; token?: string } = {}
+): Promise<any> {
+  const headers: Record<string, string> = {};
+
+  if (options.form) {
+    headers["Content-Type"] = "application/x-www-form-urlencoded";
+  } else {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (options.token) {
+    headers["Authorization"] = `Bearer ${options.token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: options.form
+      ? new URLSearchParams(body as Record<string, string>).toString()
+      : JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`HTTP ${res.status} – ${text}`);
-  }
-  return res.json() as Promise<T>;
+  return res.json();
 }

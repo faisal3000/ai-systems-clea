@@ -1,81 +1,72 @@
-'use client';
+// frontend/app/signup/page.tsx
+"use client";
 
-import { useState, FormEvent } from 'react';
-import { api } from '../../lib/api';
+import React, { useState } from "react";
+import { post } from "@/lib/api";
 
-export default function SignupPage() {
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    name: '',
-    company: '',
-  });
-  const [msg, setMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+export default function SignUpPage() {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
-  function upd<K extends keyof typeof form>(k: K, v: string) {
-    setForm({ ...form, [k]: v });
-  }
-
-  async function handleSubmit(e: FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
-    setMsg(null);
-
     try {
-      /* POST  /auth/register  */
-      await api('/auth/register', undefined, {
-        method: 'POST',
-        body: JSON.stringify({
-          email:        form.email,
-          password:     form.password,
-          name:         form.name,
-          company_name: form.company,
-        }),
-      });
-      setMsg('✅ Registered – check e-mail for confirmation link.');
-      setForm({ email: '', password: '', name: '', company: '' });
-    } catch (err: any) {
-      setMsg(`❌ ${err.message ?? 'Registration failed'}`);
-    } finally {
-      setBusy(false);
+      // FastAPI expects form-encoded for /auth/register
+      const { access_token, detail } = await post(
+        "/auth/register",
+        { username: email, password },
+        { form: true }
+      );
+      if (access_token) {
+        alert("Account created! You can now log in.");
+      } else {
+        alert(detail || "Signup failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during signup");
     }
-  }
+  };
 
   return (
-    <main className="mx-auto max-w-md space-y-6 p-8">
-      <h1 className="text-2xl font-semibold">Sign up</h1>
-      {msg && <p>{msg}</p>}
-
+    <div className="max-w-md mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          required type="email" placeholder="E-mail"
-          className="input w-full"
-          value={form.email} onChange={e => upd('email', e.target.value)}
-        />
-        <input
-          required type="password" placeholder="Password"
-          className="input w-full"
-          value={form.password} onChange={e => upd('password', e.target.value)}
-        />
-        <input
-          placeholder="Full name"
-          className="input w-full"
-          value={form.name} onChange={e => upd('name', e.target.value)}
-        />
-        <input
-          placeholder="Company"
-          className="input w-full"
-          value={form.company} onChange={e => upd('company', e.target.value)}
-        />
-
-        <button disabled={busy} className="btn-primary w-full">
-          {busy ? 'Registering…' : 'Register'}
+        <div>
+          <label htmlFor="email" className="block mb-1">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className="w-full border rounded p-2"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password" className="block mb-1">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            className="w-full border rounded p-2"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white rounded p-2"
+        >
+          Create Account
         </button>
       </form>
-      <p className="text-sm">
-        Already have an account? <a href="/login" className="text-blue-600 underline">Log in</a>
-      </p>
-    </main>
+    </div>
   );
 }
