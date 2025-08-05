@@ -1,56 +1,23 @@
 # backend/app/routers/admin.py
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlalchemy.orm import Session
 
-# ← import from ../auth.py, not ./auth.py
-from ..auth import User, get_current_user, get_db
+from app.auth import get_db, User
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
+@admin_router.get("/users/pending")
+def list_pending_users(db: Session = Depends(get_db)):
+    return db.exec(select(User).where(User.is_active == False)).all()
 
-def require_admin(current: User = Depends(get_current_user)) -> User:
-    if not current.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admins only",
-        )
-    return current
-
-
-@admin_router.get("/users", response_model=list[User])
-def list_users(
-    _: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-):
-    return db.exec(select(User)).all()
-
-
-@admin_router.patch("/users/{user_id}/approve")
-def approve_user(
-    user_id: int,
-    _: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-):
-    user = db.get(User, user_id)
+@admin_router.post("/approve/{user_id}")
+def approve_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.exec(select(User).where(User.id == user_id)).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     user.is_active = True
     db.add(user)
     db.commit()
-    db.refresh(user)
-    return {"msg": f"{user.email} approved"}
-
-
-@admin_router.delete("/users/{user_id}")
-def delete_user(
-    user_id: int,
-    _: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-):
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    db.delete(user)
-    db.commit()
-    return {"msg": f"{user.email} deleted"}
+    return {"msg": f"User {user.email} approved"}

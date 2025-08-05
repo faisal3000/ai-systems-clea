@@ -1,21 +1,18 @@
-import '@/globals.css';
-import NavBar          from '@/app/components/NavBar';
-import { Sidebar }     from '@/app/components/SideBar';
-import { AuthProvider } from '@/app/_context/AuthContext';
+// app/layout.tsx
+import './globals.css';
+import type { Metadata } from 'next';
+import ClientLayout from './ClientLayout';
 
-export const metadata = { title: 'AI Systems Engineering Agent' };
+export const metadata: Metadata = {
+  title: 'AI Systems Engineering Agent',
+  description: 'Platform for AI-powered consulting and systems engineering.',
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex h-screen flex-col">
-        <AuthProvider>
-          <NavBar />
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar />
-            <section className="flex-1 overflow-y-auto">{children}</section>
-          </div>
-        </AuthProvider>
+      <body className="bg-gray-100">
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

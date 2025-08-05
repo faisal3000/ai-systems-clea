@@ -1,3 +1,17 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+  --primary: 240 100% 50%;
+  --card: 0 0% 100%;
+  --muted: 210 40% 96.1%;
+  --chart-1: 200 80% 60%;
+  --chart-2: 150 80% 60%;
+  --chart-3: 100 80% 60%;
+  --chart-4: 50 80% 60%;
+  --chart-5: 10 80% 60%;
+}

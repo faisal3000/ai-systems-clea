@@ -1,36 +1,46 @@
-/* C:\Users\mxz\Downloads\ai_systems_agent_starter\frontend\app\consult\page.tsx */
+// frontend/app/consult/page.tsx
 "use client";
 
-import { useState } from "react";
-import { api } from "@/lib/api";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/_context/AuthContext";
+import { useRouter } from "next/navigation";
 
-export default function Consult() {
-  const [prompt, setPrompt] = useState("");
-  const [answer, setAnswer] = useState("");
+export default function ConsultPage() {
+  const { token } = useAuth();
+  const router = useRouter();
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
 
-  async function ask() {
-    setAnswer("Thinking…");
-    const res = await api<{ reply: string }>("/consult", {
-      method: "POST",
-      body: JSON.stringify({ prompt, model: "gpt-4o-mini" }),
-    });
-    setAnswer(res.reply);
-  }
+  useEffect(() => {
+    if (!token) router.push("/login");
+  }, [token, router]);
+
+  if (!token) return null;
+
+  const handleAsk = async () => {
+    // Placeholder: replace with real API call later
+    setAnswer(`You asked: "${question}"\n\n(Answer would appear here.)`);
+  };
 
   return (
-    <div className="space-y-4 max-w-3xl">
-      <h1 className="text-2xl font-semibold">Consult the Agent</h1>
+    <div>
+      <h1 className="text-2xl font-bold mb-4">Consult AI Agent</h1>
       <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        rows={4}
-        className="w-full p-2 border rounded"
+        className="w-full border rounded p-2 mb-4"
+        placeholder="Type your question..."
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
       />
-      <button onClick={ask} className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button
+        onClick={handleAsk}
+        className="bg-blue-600 text-white px-4 py-2 rounded mb-6"
+      >
         Ask
       </button>
       {answer && (
-        <pre className="whitespace-pre-wrap bg-gray-100 p-3 rounded">{answer}</pre>
+        <div className="bg-white p-4 border rounded whitespace-pre-wrap">
+          {answer}
+        </div>
       )}
     </div>
   );
