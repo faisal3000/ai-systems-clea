@@ -1,8 +1,7 @@
-// frontend/app/knowledge-base/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuth } from "@/_context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function KnowledgeBasePage() {
@@ -18,7 +17,6 @@ export default function KnowledgeBasePage() {
   if (!token) return null;
 
   const handleSearch = () => {
-    // Placeholder: replace with real KB search later
     setResults([
       `Result 1 for "${query}"`,
       `Result 2 for "${query}"`,

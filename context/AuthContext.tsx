@@ -1,41 +1,61 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
-  login: (token: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) setToken(storedToken);
+    const saved = localStorage.getItem("token");
+    if (saved) setToken(saved);
   }, []);
 
-  const login = (newToken: string) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-  };
+  async function login(email: string, password: string) {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/login`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Login failed");
+    }
+    const { access_token } = await res.json();
+    localStorage.setItem("token", access_token);
+    setToken(access_token);
+    router.push("/dashboard");
+  }
 
-  const logout = () => {
+  function logout() {
     localStorage.removeItem("token");
     setToken(null);
     router.push("/login");
-  };
+  }
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated: !!token,
+        isAuthenticated: Boolean(token),
         token,
         login,
         logout,
@@ -44,12 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}

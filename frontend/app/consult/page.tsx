@@ -1,8 +1,7 @@
-// frontend/app/consult/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuth } from "@/_context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function ConsultPage() {
@@ -18,7 +17,6 @@ export default function ConsultPage() {
   if (!token) return null;
 
   const handleAsk = async () => {
-    // Placeholder: replace with real API call later
     setAnswer(`You asked: "${question}"\n\n(Answer would appear here.)`);
   };
 
